@@ -10,6 +10,7 @@ from nltk.classify.scikitlearn import SklearnClassifier
 from sklearn.naive_bayes import MultinomialNB,BernoulliNB
 from sklearn.linear_model import LogisticRegression,SGDClassifier
 from sklearn.svm import SVC, LinearSVC, NuSVC
+#from sklearn.model_selection import GridSearchCV
 import csv
 from io import StringIO
 #from unidecode import unidecode
@@ -31,12 +32,12 @@ def movie_reviews_documents():
         
     print("movie_reviews.words(fileid): ", movie_reviews.fileids(category)[:2])
     print("movie_reviews.categories(): ", movie_reviews.categories())
-    return documents, movie_reviews.words
+    return documents, movie_reviews.words()
 
 
 def sentiment_analysis_dataset_documents():
     print("Reading dataset...")
-    dataset = pd.read_csv("Sentiment Analysis Dataset.csv", quotechar='"', quoting=0,  error_bad_lines=False)
+    dataset = pd.read_csv("Sentiment Analysis Dataset_1000.csv", quotechar='"', quoting=0,  error_bad_lines=False)
     categories = dataset['Sentiment']
     sentences = dataset['SentimentText']
     # removing non-ascii charactars
@@ -44,10 +45,11 @@ def sentiment_analysis_dataset_documents():
     sentences = sentences.apply(lambda x: ''.join([" " if ord(i) < 32 or ord(i) > 126 else i for i in x]))
 #    sentences = sentences.apply( lambda x:  unidecode(unicode(x, encoding = "utf-8")))
     print("Getting words...")
-    words = map(lambda x: get_filtered_tokens(x), sentences.values)
+    words = list(map(lambda x: get_filtered_tokens(x), sentences.values))
     print("word looks like: ", words[0:2])
-    documents = zip(words, categories)
+    documents = list(zip(words, categories))
     print("Document created!")
+    print("document looks like: ", documents[0:2])
     return documents, words
 
 
@@ -57,29 +59,32 @@ def text_classifier():
     random.shuffle(documents)
     
     all_words = []
-    for w in words():
-        all_words.append(w.lower())
+    for words_in_sentences in words:
+        for w in words_in_sentences:
+            all_words.append(w.lower())
     all_words = nltk.FreqDist(all_words)
     print("len(all_words): ", len(all_words))
     print("len(list(all_words.keys())): ", len(list(all_words.keys())))
 
-    word_features = list(all_words.keys())[:3000]
+#    word_features = list(all_words.keys())[:3000]
+    word_features = list(all_words.keys())
 #    print "most and least word features: ", word_features[0:10], word_features[-10:-1]
 
 
     featuresets = [(find_features(rev, word_features), category) for (rev, category) in documents]
     print("len of featuresets: ", len(featuresets))
+    train_set_size = int(len(word_features)/3*2) 
+    training_set = featuresets[:train_set_size]
+    testing_set = featuresets[train_set_size:]
 
-    training_set = featuresets[:1900]
-    testing_set = featuresets[1900:]
-
-#    SVC_classifier = SklearnClassifier(SVC())
+#    SVC_classifier = GridSearchCV(SVC(), cv=5)
 #    SVC_classifier.train(training_set)
 #    print("SVC_classifier accuracy percent:", (nltk.classify.accuracy(SVC_classifier, testing_set))*100)
 #    MNB_classifier = SklearnClassifier(MultinomialNB())
 #    MNB_classifier.train(training_set)
 #    print("MultinomialNB accuracy percent:",nltk.classify.accuracy(MNB_classifier, testing_set))
 
+#    BNB_classifier = GridSearchCV(BernoulliNB(), cv=5)
     BNB_classifier = SklearnClassifier(BernoulliNB())
     BNB_classifier.train(training_set)
     print("BernoulliNB accuracy percent:",nltk.classify.accuracy(BNB_classifier, testing_set))
