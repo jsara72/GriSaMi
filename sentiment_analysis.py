@@ -10,7 +10,7 @@ from nltk.classify.scikitlearn import SklearnClassifier
 from sklearn.naive_bayes import MultinomialNB,BernoulliNB
 from sklearn.linear_model import LogisticRegression,SGDClassifier
 from sklearn.svm import SVC, LinearSVC, NuSVC
-#from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV
 import csv
 from io import StringIO
 #from unidecode import unidecode
@@ -32,12 +32,17 @@ def movie_reviews_documents():
         
     print("movie_reviews.words(fileid): ", movie_reviews.fileids(category)[:2])
     print("movie_reviews.categories(): ", movie_reviews.categories())
-    return documents, movie_reviews.words()
+    print("words: ", movie_reviews.words()[0])
+    all_words = []
+    for w in movie_reviews.words():
+            all_words.append(w.lower())
+
+    return documents, all_words
 
 
 def sentiment_analysis_dataset_documents():
     print("Reading dataset...")
-    dataset = pd.read_csv("Sentiment Analysis Dataset_1000.csv", quotechar='"', quoting=0,  error_bad_lines=False)
+    dataset = pd.read_csv("Sentiment Analysis Dataset.csv", quotechar='"', quoting=0,  error_bad_lines=False)
     categories = dataset['Sentiment']
     sentences = dataset['SentimentText']
     # removing non-ascii charactars
@@ -45,23 +50,23 @@ def sentiment_analysis_dataset_documents():
     sentences = sentences.apply(lambda x: ''.join([" " if ord(i) < 32 or ord(i) > 126 else i for i in x]))
 #    sentences = sentences.apply( lambda x:  unidecode(unicode(x, encoding = "utf-8")))
     print("Getting words...")
-    words = list(map(lambda x: get_filtered_tokens(x), sentences.values))
+    words = list(map(lambda x: unicode(get_filtered_tokens(x)), sentences.values))
     print("word looks like: ", words[0:2])
     documents = list(zip(words, categories))
     print("Document created!")
     print("document looks like: ", documents[0:2])
-    return documents, words
-
-
-def text_classifier():
-#    documents = movie_reviews_documents()
-    documents, words = sentiment_analysis_dataset_documents()
-    random.shuffle(documents)
-    
     all_words = []
     for words_in_sentences in words:
         for w in words_in_sentences:
             all_words.append(w.lower())
+    return documents, all_words
+
+
+def text_classifier():
+#    documents, all_words = movie_reviews_documents()
+    documents, all_words = sentiment_analysis_dataset_documents()
+    random.shuffle(documents)
+    
     all_words = nltk.FreqDist(all_words)
     print("len(all_words): ", len(all_words))
     print("len(list(all_words.keys())): ", len(list(all_words.keys())))
@@ -76,16 +81,18 @@ def text_classifier():
     train_set_size = int(len(word_features)/3*2) 
     training_set = featuresets[:train_set_size]
     testing_set = featuresets[train_set_size:]
+#    print("train_set_size[0]: ",training_set[0])
 
-#    SVC_classifier = GridSearchCV(SVC(), cv=5)
-#    SVC_classifier.train(training_set)
+#    SVC_classifier = GridSearchCV(SVC(), cv=5, param_grid={})
+#    SVC_classifier.fit(training_set)
 #    print("SVC_classifier accuracy percent:", (nltk.classify.accuracy(SVC_classifier, testing_set))*100)
 #    MNB_classifier = SklearnClassifier(MultinomialNB())
 #    MNB_classifier.train(training_set)
 #    print("MultinomialNB accuracy percent:",nltk.classify.accuracy(MNB_classifier, testing_set))
 
-#    BNB_classifier = GridSearchCV(BernoulliNB(), cv=5)
+#    BNB_classifier = GridSearchCV(BernoulliNB(), cv=5, param_grid={})
     BNB_classifier = SklearnClassifier(BernoulliNB())
+#    BNB_classifier.fit(training_set)
     BNB_classifier.train(training_set)
     print("BernoulliNB accuracy percent:",nltk.classify.accuracy(BNB_classifier, testing_set))
     text_classifier.classifier = BNB_classifier
@@ -111,7 +118,7 @@ def get_filtered_tokens(text):
 def classify_tweet(text):
     tokens = get_filtered_tokens(text)
     cl = text_classifier.classifier.classify(find_features(text, tokens))
-    print(text, cl)
+#    print(text, cl)
 
 def pos_tagger(text):
 
