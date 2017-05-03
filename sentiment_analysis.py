@@ -13,8 +13,34 @@ from sklearn.svm import SVC, LinearSVC, NuSVC
 from sklearn.model_selection import GridSearchCV
 import csv
 from io import StringIO
-#from unidecode import unidecode
+from nltk.classify import ClassifierI
+# For Python3 uncomment:
+#from statistics import mode
+# For Python 2:
+from scipy.stats import mode
 
+class VoteClassifier(ClassifierI):
+    def __init__(self, *classifiers):
+        self._classifiers = classifiers
+    
+    def classify(self, features):
+        votes = []
+        for c in self._classifiers:
+            v = c.classify(features)
+            votes.append(v)
+        # Fix this for Python 3 statistics
+        return mode(votes)[0][0]
+    
+    def confidence(self, features):
+        votes = []
+        for c in self._classifiers:
+            v = c.classify(features)
+            votes.append(v)
+        
+        # Fix this for Python 3 statistics
+        choice_votes = votes.count(mode(votes)[0][0])
+        conf = choice_votes / len(votes)
+        return conf
 
 def find_features(document, word_features):
     words = set(document)
@@ -45,16 +71,19 @@ def sentiment_analysis_dataset_documents():
     dataset = pd.read_csv("Sentiment Analysis Dataset.csv", quotechar='"', quoting=0,  error_bad_lines=False)
     categories = dataset['Sentiment']
     sentences = dataset['SentimentText']
+    print("len of sentences: ", len(sentences))
     # removing non-ascii charactars
     print("Removing non-ascii charachars...")
-    sentences = sentences.apply(lambda x: ''.join([" " if ord(i) < 32 or ord(i) > 126 else i for i in x]))
+    sentences_ascii=[]
+    for sentence in sentences:
+        sentences_ascii.append(''.join([" " if ord(i) < 32 or ord(i) > 126 else i for i in sentence]))
 #    sentences = sentences.apply( lambda x:  unidecode(unicode(x, encoding = "utf-8")))
     print("Getting words...")
-    words = list(map(lambda x: unicode(get_filtered_tokens(x)), sentences.values))
+    words = list(map(lambda x: unicode(get_filtered_tokens(x)), sentences_ascii))
     print("word looks like: ", words[0:2])
     documents = list(zip(words, categories))
-    print("Document created!")
     print("document looks like: ", documents[0:2])
+    print("Document created!")
     all_words = []
     for words_in_sentences in words:
         for w in words_in_sentences:
@@ -62,40 +91,88 @@ def sentiment_analysis_dataset_documents():
     return documents, all_words
 
 
-def text_classifier():
-#    documents, all_words = movie_reviews_documents()
-    documents, all_words = sentiment_analysis_dataset_documents()
+def get_classification_data(documents, all_words):
     random.shuffle(documents)
+#    print("document looks like: ", documents[0:2])
+
+    #    words_dist = nltk.FreqDist(all_words).most_common(100)
+#    print("len(all_words): ", len(all_words))
     
-    all_words = nltk.FreqDist(all_words)
-    print("len(all_words): ", len(all_words))
-    print("len(list(all_words.keys())): ", len(list(all_words.keys())))
-
-#    word_features = list(all_words.keys())[:3000]
-    word_features = list(all_words.keys())
-#    print "most and least word features: ", word_features[0:10], word_features[-10:-1]
-
-
-    featuresets = [(find_features(rev, word_features), category) for (rev, category) in documents]
-    print("len of featuresets: ", len(featuresets))
-    train_set_size = int(len(word_features)/3*2) 
+    featuresets = [(find_features(sentence, all_words), category) for (sentence, category) in documents]
+#    print("len of featuresets: ", len(featuresets))
+#    print("featuresets looks like: ", featuresets[0])
+    train_set_size = int(len(featuresets)/10*9)
     training_set = featuresets[:train_set_size]
     testing_set = featuresets[train_set_size:]
+    return training_set, testing_set
+
+def text_classifier():
+    #    documents, all_words = movie_reviews_documents()
+    documents, all_words = sentiment_analysis_dataset_documents()
+    training_set, testing_set = get_classification_data(documents, all_words)
 #    print("train_set_size[0]: ",training_set[0])
-
+#    X,
 #    SVC_classifier = GridSearchCV(SVC(), cv=5, param_grid={})
-#    SVC_classifier.fit(training_set)
+#    SVC_classifier.fit(featuresets, )
 #    print("SVC_classifier accuracy percent:", (nltk.classify.accuracy(SVC_classifier, testing_set))*100)
-#    MNB_classifier = SklearnClassifier(MultinomialNB())
-#    MNB_classifier.train(training_set)
-#    print("MultinomialNB accuracy percent:",nltk.classify.accuracy(MNB_classifier, testing_set))
+#    text_classifier.classifier = BNB_classifier
 
-#    BNB_classifier = GridSearchCV(BernoulliNB(), cv=5, param_grid={})
+    naiveBayesClassifier = nltk.NaiveBayesClassifier.train(training_set)
+    print("Naive Bayes Classifier accuracy percent:",(nltk.classify.accuracy(naiveBayesClassifier, testing_set))*100)
+
+    training_set, testing_set = get_classification_data(documents, all_words)
+    MNB_classifier = SklearnClassifier(MultinomialNB())
+    MNB_classifier.train(training_set)
+    print("MultinomialNB accuracy percent:",nltk.classify.accuracy(MNB_classifier, testing_set)*100)
+
+    training_set, testing_set = get_classification_data(documents, all_words)
     BNB_classifier = SklearnClassifier(BernoulliNB())
-#    BNB_classifier.fit(training_set)
     BNB_classifier.train(training_set)
-    print("BernoulliNB accuracy percent:",nltk.classify.accuracy(BNB_classifier, testing_set))
-    text_classifier.classifier = BNB_classifier
+    print("BernoulliNB accuracy percent:",nltk.classify.accuracy(BNB_classifier, testing_set)*100)
+
+    training_set, testing_set = get_classification_data(documents, all_words)
+    LogisticRegression_classifier = SklearnClassifier(LogisticRegression())
+    LogisticRegression_classifier.train(training_set)
+    print("LogisticRegression_classifier accuracy percent:", (nltk.classify.accuracy(LogisticRegression_classifier, testing_set))*100)
+
+    training_set, testing_set = get_classification_data(documents, all_words)
+    SGDClassifier_classifier = SklearnClassifier(SGDClassifier())
+    SGDClassifier_classifier.train(training_set)
+    print("SGDClassifier_classifier accuracy percent:", (nltk.classify.accuracy(SGDClassifier_classifier, testing_set))*100)
+    
+    training_set, testing_set = get_classification_data(documents, all_words)
+    SVC_classifier = SklearnClassifier(SVC())
+    SVC_classifier.train(training_set)
+    print("SVC_classifier accuracy percent:", (nltk.classify.accuracy(SVC_classifier, testing_set))*100)
+
+    training_set, testing_set = get_classification_data(documents, all_words)
+    LinearSVC_classifier = SklearnClassifier(LinearSVC())
+    LinearSVC_classifier.train(training_set)
+    print("LinearSVC_classifier accuracy percent:", (nltk.classify.accuracy(LinearSVC_classifier, testing_set))*100)
+
+    training_set, testing_set = get_classification_data(documents, all_words)
+    NuSVC_classifier = SklearnClassifier(NuSVC())
+    NuSVC_classifier.train(training_set)
+    print("NuSVC_classifier accuracy percent:", (nltk.classify.accuracy(NuSVC_classifier, testing_set))*100)
+
+    voted_classifier = VoteClassifier(naiveBayesClassifier,
+                                      NuSVC_classifier,
+                                      LinearSVC_classifier,
+                                      SGDClassifier_classifier,
+                                      MNB_classifier,
+                                      BNB_classifier,
+                                      LogisticRegression_classifier)
+
+    print("voted_classifier accuracy percent:", (nltk.classify.accuracy(voted_classifier, testing_set))*100)
+
+    print("Classification:", voted_classifier.classify(testing_set[0][0]), "Confidence %:",voted_classifier.confidence(testing_set[0][0])*100)
+    print("Classification:", voted_classifier.classify(testing_set[1][0]), "Confidence %:",voted_classifier.confidence(testing_set[1][0])*100)
+    print("Classification:", voted_classifier.classify(testing_set[2][0]), "Confidence %:",voted_classifier.confidence(testing_set[2][0])*100)
+    print("Classification:", voted_classifier.classify(testing_set[3][0]), "Confidence %:",voted_classifier.confidence(testing_set[3][0])*100)
+    print("Classification:", voted_classifier.classify(testing_set[4][0]), "Confidence %:",voted_classifier.confidence(testing_set[4][0])*100)
+    print("Classification:", voted_classifier.classify(testing_set[5][0]), "Confidence %:",voted_classifier.confidence(testing_set[5][0])*100)
+
+    text_classifier.classifier = voted_classifier
 
 
 def get_verb_tags():
@@ -118,7 +195,7 @@ def get_filtered_tokens(text):
 def classify_tweet(text):
     tokens = get_filtered_tokens(text)
     cl = text_classifier.classifier.classify(find_features(text, tokens))
-#    print(text, cl)
+    print(text, cl)
 
 def pos_tagger(text):
 
