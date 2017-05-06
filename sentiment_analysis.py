@@ -10,8 +10,9 @@ from nltk.classify.scikitlearn import SklearnClassifier
 from sklearn.naive_bayes import MultinomialNB,BernoulliNB
 from sklearn.linear_model import LogisticRegression,SGDClassifier
 from sklearn.svm import SVC, LinearSVC, NuSVC
-from sklearn.model_selection import GridSearchCV
+#from sklearn.model_selection import GridSearchCV
 import csv
+import pickle
 from io import StringIO
 from nltk.classify import ClassifierI
 # For Python3 uncomment:
@@ -19,10 +20,11 @@ from nltk.classify import ClassifierI
 # For Python 2:
 from scipy.stats import mode
 
+
 class VoteClassifier(ClassifierI):
     def __init__(self, *classifiers):
         self._classifiers = classifiers
-    
+
     def classify(self, features):
         votes = []
         for c in self._classifiers:
@@ -30,13 +32,13 @@ class VoteClassifier(ClassifierI):
             votes.append(v)
         # Fix this for Python 3 statistics
         return mode(votes)[0][0]
-    
+
     def confidence(self, features):
         votes = []
         for c in self._classifiers:
             v = c.classify(features)
             votes.append(v)
-        
+
         # Fix this for Python 3 statistics
         choice_votes = votes.count(mode(votes)[0][0])
         conf = choice_votes / len(votes)
@@ -47,7 +49,7 @@ def find_features(document, word_features):
     features = {}
     for w in word_features:
         features[w] = (w in words)
-    
+
     return features
 
 
@@ -55,7 +57,7 @@ def movie_reviews_documents():
     documents = [(list(movie_reviews.words(fileid)), category)
                  for category in movie_reviews.categories()
                  for fileid in movie_reviews.fileids(category)]
-        
+
     print("movie_reviews.words(fileid): ", movie_reviews.fileids(category)[:2])
     print("movie_reviews.categories(): ", movie_reviews.categories())
     print("words: ", movie_reviews.words()[0])
@@ -66,9 +68,14 @@ def movie_reviews_documents():
     return documents, all_words
 
 
-def sentiment_analysis_dataset_documents():
+def sentiment_analysis_dataset_documents(reload=True):
+    if reload:
+        documents = pickle.load(open("documents.pkl","rb"))
+        all_words = pickle.load(open("all_words.pkl","rb"))
+        return documents, all_words
+
     print("Reading dataset...")
-    dataset = pd.read_csv("Sentiment Analysis Dataset.csv", quotechar='"', quoting=0,  error_bad_lines=False)
+    dataset = pd.read_csv("Sentiment Analysis Dataset_1000.csv", quotechar='"', quoting=0,  error_bad_lines=False)
     categories = dataset['Sentiment']
     sentences = dataset['SentimentText']
     print("len of sentences: ", len(sentences))
@@ -79,7 +86,7 @@ def sentiment_analysis_dataset_documents():
         sentences_ascii.append(''.join([" " if ord(i) < 32 or ord(i) > 126 else i for i in sentence]))
 #    sentences = sentences.apply( lambda x:  unidecode(unicode(x, encoding = "utf-8")))
     print("Getting words...")
-    words = list(map(lambda x: unicode(get_filtered_tokens(x)), sentences_ascii))
+    words = list(map(lambda x: get_filtered_tokens(x), sentences_ascii))
     print("word looks like: ", words[0:2])
     documents = list(zip(words, categories))
     print("document looks like: ", documents[0:2])
@@ -88,28 +95,38 @@ def sentiment_analysis_dataset_documents():
     for words_in_sentences in words:
         for w in words_in_sentences:
             all_words.append(w.lower())
+    pickle.dump(documents,open("documents.pkl","wb"))
+    pickle.dump(all_words,open("all_words.pkl","wb"))
     return documents, all_words
 
 
-def get_classification_data(documents, all_words):
+def get_classification_data(documents, all_words, reload=True):
+    if reload:
+        training_set = pickle.load(open("training_set.pkl", "rb"))
+        testing_set = pickle.load(open("testing_set.pkl", "rb"))
+        return training_set, testing_set
     random.shuffle(documents)
 #    print("document looks like: ", documents[0:2])
 
     #    words_dist = nltk.FreqDist(all_words).most_common(100)
 #    print("len(all_words): ", len(all_words))
-    
+
     featuresets = [(find_features(sentence, all_words), category) for (sentence, category) in documents]
 #    print("len of featuresets: ", len(featuresets))
 #    print("featuresets looks like: ", featuresets[0])
     train_set_size = int(len(featuresets)/10*9)
     training_set = featuresets[:train_set_size]
     testing_set = featuresets[train_set_size:]
+    pickle.dump(training_set, open("training_set.pkl", "wb"))
+    pickle.dump(testing_set, open("testing_set.pkl", "wb"))
     return training_set, testing_set
 
 def text_classifier():
     #    documents, all_words = movie_reviews_documents()
     documents, all_words = sentiment_analysis_dataset_documents()
+    print("got documents")
     training_set, testing_set = get_classification_data(documents, all_words)
+    print("got training and testing set")
 #    print("train_set_size[0]: ",training_set[0])
 #    X,
 #    SVC_classifier = GridSearchCV(SVC(), cv=5, param_grid={})
@@ -139,7 +156,7 @@ def text_classifier():
     SGDClassifier_classifier = SklearnClassifier(SGDClassifier())
     SGDClassifier_classifier.train(training_set)
     print("SGDClassifier_classifier accuracy percent:", (nltk.classify.accuracy(SGDClassifier_classifier, testing_set))*100)
-    
+
     training_set, testing_set = get_classification_data(documents, all_words)
     SVC_classifier = SklearnClassifier(SVC())
     SVC_classifier.train(training_set)
@@ -172,8 +189,15 @@ def text_classifier():
     print("Classification:", voted_classifier.classify(testing_set[4][0]), "Confidence %:",voted_classifier.confidence(testing_set[4][0])*100)
     print("Classification:", voted_classifier.classify(testing_set[5][0]), "Confidence %:",voted_classifier.confidence(testing_set[5][0])*100)
 
-    text_classifier.classifier = voted_classifier
+    return voted_classifier
 
+def train_classifier(reload=True):
+    if not reload:
+        classifier = text_classifier()
+        pickle.dump(classifier, open("classifier.pkl", "wb"))
+        return classifier
+    else:
+        return pickle.load(open("classifier.pkl", "rb"))
 
 def get_verb_tags():
     return ["VB", "VBD", "VBG", "VBN", "VBP", "VBZ"]
@@ -186,7 +210,7 @@ def list_pos_tagger(all_sentences):
 
 def get_filtered_tokens(text):
     tokens = word_tokenize(text)
-    
+
     stop_words = set(stopwords.words('english'))
     filtered_tokens = [w for w in tokens if not w in stop_words]
 #    print "most common words: ", nltk.FreqDist(filtered_tokens).most_common(20)
@@ -194,7 +218,7 @@ def get_filtered_tokens(text):
 
 def classify_tweet(text):
     tokens = get_filtered_tokens(text)
-    cl = text_classifier.classifier.classify(find_features(text, tokens))
+    cl = classifier.classify(find_features(text, tokens))
     print(text, cl)
 
 def pos_tagger(text):
@@ -224,10 +248,10 @@ def get_tweet_text():
 #    print len(get_tweet_text.structured_tweets)
     return get_tweet_text.structured_tweets
 
-
 #sentence = """At eight o'clock on Thursday morning Arthur didn't feel very good. He was going to university."""
 #f = open("Archive/results/filtered_tweets/part-00000")
-text_classifier()
+classifier = train_classifier()
+
 all_sentences = []
 for tweet in get_tweet_text():
     all_sentences.append(tweet)
