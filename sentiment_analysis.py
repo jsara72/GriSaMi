@@ -1,11 +1,9 @@
 # author: jsara72
 from nltk import word_tokenize, pos_tag
 from nltk.corpus import stopwords
-import random
 import nltk
 from nltk.corpus import movie_reviews
-import pandas as pd
-import re
+from nltk.classify import ClassifierI
 from nltk.classify.scikitlearn import SklearnClassifier
 from sklearn.naive_bayes import MultinomialNB,BernoulliNB
 from sklearn.linear_model import LogisticRegression,SGDClassifier
@@ -14,7 +12,11 @@ from sklearn.svm import SVC, LinearSVC, NuSVC
 import csv
 import pickle
 from io import StringIO
-from nltk.classify import ClassifierI
+import random
+import numpy as np
+import pandas as pd
+import re
+
 # For Python3 uncomment:
 #from statistics import mode
 # For Python 2:
@@ -213,6 +215,9 @@ def get_filtered_tokens(text):
 
     stop_words = set(stopwords.words('english'))
     filtered_tokens = [w for w in tokens if not w in stop_words]
+#    print("shape, type(filtered_tokens): ", np.shape(filtered_tokens), type(filtered_tokens))
+
+#    print("np.shape(filtered_tokens): ", np.shape(filtered_tokens))
 #    print "most common words: ", nltk.FreqDist(filtered_tokens).most_common(20)
     return filtered_tokens
 
@@ -246,13 +251,16 @@ def get_tweet_text():
     reg = re.compile("text:.*?lang")
     get_tweet_text.structured_tweets = map(lambda x: re.sub(r'[^\x00-\x7F]+',' ', x[5:-6]), reg.findall(f.read()))
 #    print len(get_tweet_text.structured_tweets)
+    f.close()
     return get_tweet_text.structured_tweets
 
-#sentence = """At eight o'clock on Thursday morning Arthur didn't feel very good. He was going to university."""
-#f = open("Archive/results/filtered_tweets/part-00000")
-classifier = train_classifier()
+if __name__ == "__main__":
 
-all_sentences = []
-for tweet in get_tweet_text():
-    all_sentences.append(tweet)
-list_pos_tagger(all_sentences)
+    #sentence = """At eight o'clock on Thursday morning Arthur didn't feel very good. He was going to university."""
+    #f = open("Archive/results/filtered_tweets/part-00000")
+    classifier = train_classifier()
+
+    all_sentences = []
+    for tweet in get_tweet_text():
+        all_sentences.append(tweet)
+    list_pos_tagger(all_sentences)
