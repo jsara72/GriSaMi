@@ -8,13 +8,45 @@ import argparse
 import pickle
 from matplotlib import pyplot as plt
 from matplotlib.collections import LineCollection
+from nltk.corpus import wordnet as wn
+from nltk.stem.wordnet import WordNetLemmatizer
+
+
+
+def is_noun(tag):
+    return tag in ['NN', 'NNS', 'NNP', 'NNPS']
+
+def is_verb(tag):
+    return tag in ['VB', 'VBD', 'VBG', 'VBN', 'VBP', 'VBZ']
+
+def is_adverb(tag):
+    return tag in ['RB', 'RBR', 'RBS']
+
+def is_adjective(tag):
+    return tag in ['JJ', 'JJR', 'JJS']
+
+def penn_to_wn(tag):
+    if is_adjective(tag):
+        return wn.ADJ
+    elif is_noun(tag):
+        return wn.NOUN
+    elif is_adverb(tag):
+        return wn.ADV
+    elif is_verb(tag):
+        return wn.VERB
+    return wn.NOUN
+
 
 def get_filtered_words(tweet):
     word_list = []
-    tokens = get_filtered_tokens(tweet)
-    for token in tokens:
+    tokens = get_filtered_tokens(tweet.lower())
+    tags = nltk.pos_tag(tokens)
+    for i in range(len(tokens)):
+        token = tokens[i]
+        tag = tags[i]
         if len(token) > 3:# and token.lower() not in ["https", "march", "women", "womensmarch"]:
-            word_list.append(token.lower())
+            wn_tag = penn_to_wn(tag[1])
+            word_list.append(WordNetLemmatizer().lemmatize(tag[0],wn_tag))
     return word_list
 
 def save_plot(labels, X_true):
@@ -99,7 +131,7 @@ if __name__ == "__main__":
     word_emb = pca.fit_transform(co_oc)
     print (word_emb)
     print (np.shape(word_emb[:, 1:3]))
-    save_plot(most_common_words, word_emb[:, 1:3])
+    save_plot(most_common_words, word_emb[:, 0:2])
 #    save_plot(most_common_words, pos)
     print("pca variance ratio: ", pca.explained_variance_ratio_)
 
