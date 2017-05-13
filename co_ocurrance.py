@@ -39,15 +39,17 @@ def penn_to_wn(tag):
 
 def get_filtered_words(tweet):
     word_list = []
+    tag_list = []
     tokens = get_filtered_tokens(tweet.lower())
     tags = nltk.pos_tag(tokens)
     for i in range(len(tokens)):
-        token = tokens[i]
+        token = tokens[i].lower()
         tag = tags[i]
-        if len(token) > 3:# and token.lower() not in ["https", "march", "women", "womensmarch"]:
+        if len(token) > 3: #token.lower() not in ["https", "march", "women", "womensmarch"]:
             wn_tag = penn_to_wn(tag[1])
+            tag_list.append(tag[1])
             word_list.append(WordNetLemmatizer().lemmatize(tag[0],wn_tag))
-    return word_list
+    return word_list, tag_list
 
 def save_plot(labels, X_true):
     fig = plt.figure()
@@ -95,9 +97,10 @@ def get_co_oc(reload):
             counter += 1
             if counter % 10000 == 0:
                 print("in line ", counter)
-            all_words.extend(get_filtered_words((tweet)))
+            words, tages = get_filtered_words((tweet))
+            all_words.extend(words)
         print("shape, type(all_words): ", np.shape(all_words), type(all_words))
-        vocab_size = 200
+        vocab_size = 500
         co_oc = np.zeros((vocab_size, vocab_size))
         #    print("all words: ", all_words[0:2])
         most_common_words_freq = nltk.FreqDist(all_words).most_common(vocab_size)
@@ -105,10 +108,16 @@ def get_co_oc(reload):
         word_to_id = {word: id for (word, id) in map(lambda ind: (most_common_words[ind], ind), range(len(most_common_words)))}
         #    print(word_to_id)
         for tweet in get_tweet_text():
-            words = [w for w in get_filtered_words(tweet) if w in most_common_words]
+            ws, ts = get_filtered_words(tweet)
+            words = []
+            for i in range(len(ws)):
+                if ws[i] in most_common_words and is_noun(ts[i]):
+                    words.append(ws[i])
+#            words = [w for w, t in get_filtered_words(tweet) if w in most_common_words and is_noun(t)]
             for first_word in words:
                 for second_word in words:
-                    co_oc[word_to_id[first_word]][word_to_id[second_word]] += 1
+                    if first_word is not second_word:
+                        co_oc[word_to_id[first_word]][word_to_id[second_word]] += 1
 
         pickle.dump(co_oc,open("co_oc.pkl", "wb"))
         pickle.dump(most_common_words,open("co_oc_most_common_words.pkl", "wb"))
@@ -132,7 +141,8 @@ if __name__ == "__main__":
     print (word_emb)
     print (np.shape(word_emb[:, 1:3]))
     save_plot(most_common_words, word_emb[:, 0:2])
-#    save_plot(most_common_words, pos)
     print("pca variance ratio: ", pca.explained_variance_ratio_)
+
+#    save_plot(most_common_words, pos)
 
 

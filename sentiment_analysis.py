@@ -5,10 +5,13 @@ import nltk
 from nltk.corpus import movie_reviews
 from nltk.classify import ClassifierI
 from nltk.classify.scikitlearn import SklearnClassifier
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+
 from sklearn.naive_bayes import MultinomialNB,BernoulliNB
 from sklearn.linear_model import LogisticRegression,SGDClassifier
 from sklearn.svm import SVC, LinearSVC, NuSVC
 #from sklearn.model_selection import GridSearchCV
+
 import csv
 import pickle
 from io import StringIO
@@ -221,16 +224,23 @@ def get_filtered_tokens(text):
 #    print "most common words: ", nltk.FreqDist(filtered_tokens).most_common(20)
     return filtered_tokens
 
-def classify_tweet(text):
+def classify_tweet(text, classifier):
     tokens = get_filtered_tokens(text)
     cl = classifier.classify(find_features(text, tokens))
-    print(text, cl)
+    cnf = classifier.confidence(find_features(text, tokens))
+    print("polarity: ", cl, ", confidency: ", cnf)
+
+def classify_tweet_nltk(text, sid):
+    score = sid.polarity_scores(text)
+    print("nltk score: ", score)
 
 def pos_tagger(text):
 
     tokens = get_filtered_tokens(text)
     tagged = pos_tag(tokens)
-    classify_tweet(text)
+    sid = SentimentIntensityAnalyzer()
+
+    classify_tweet(text, sid)
 #    print "tagged: ", tagged
 
     verbs = [w[0] for w in tagged if w[1] in get_verb_tags()]
@@ -258,9 +268,11 @@ if __name__ == "__main__":
 
     #sentence = """At eight o'clock on Thursday morning Arthur didn't feel very good. He was going to university."""
     #f = open("Archive/results/filtered_tweets/part-00000")
-    classifier = train_classifier()
-
+    vclassifier = train_classifier()
     all_sentences = []
     for tweet in get_tweet_text():
         all_sentences.append(tweet)
-    list_pos_tagger(all_sentences)
+    for sentence in sentences:
+        print(sentence)
+        classify_tweet(sentence, vclassifier)
+        classify_tweet_nltk(sentence, SentimentIntensityAnalyzer())

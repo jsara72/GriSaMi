@@ -1,0 +1,17 @@
+Tweets sentiment analysis corpus controversial sentences:
+
+ItemID,Sentiment,SentimentSource,SentimentText
+8,0,Sentiment140,       Sunny Again        Work Tomorrow  :-|       TV Tonight
+9,1,Sentiment140,      handed in my uniform today . i miss you already
+11,0,Sentiment140,      I must think about positive..
+12,1,Sentiment140,      thanks to all the haters up in my face all day! 112-102
+13,0,Sentiment140,      this weekend has sucked so far
+15,0,Sentiment140,     ok thats it you win.
+
+
+["Sunny Again        Work Tomorrow  :-|       TV Tonight",
+                     "handed in my uniform today . i miss you already",
+                     "I must think about positive..",
+                     "thanks to all the haters up in my face all day! 112-102",
+                     "this weekend has sucked so far",
+                     "ok thats it you win."]
