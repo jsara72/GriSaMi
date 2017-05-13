@@ -228,11 +228,11 @@ def classify_tweet(text, classifier):
     tokens = get_filtered_tokens(text)
     cl = classifier.classify(find_features(text, tokens))
     cnf = classifier.confidence(find_features(text, tokens))
-    print("polarity: ", cl, ", confidency: ", cnf)
+#    print("polarity: ", cl, ", confidency: ", cnf)
 
 def classify_tweet_nltk(text, sid):
     score = sid.polarity_scores(text)
-    print("nltk score: ", score)
+#    print("nltk score: ", score)
 
 def pos_tagger(text):
 
