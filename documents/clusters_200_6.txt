@@ -1,0 +1,24 @@
+for cluster  0
+['must', 'full', 'justice', 'forward', 'reproductive', 'womensm', 'ensure', 'congratulation', 'sensanders']
+X_Y:  (9, 2) <class 'list'>
+This class size: 9
+for cluster  1
+['everyone', 'show', 'marcha', 'great', 'could', 'support', 'girl', 'many', 'go', 'history', 'equality', 'metro', 'president', 'fight', 'street', 'across', 'join', 'good', 'country', 'large', 'time', 'ready', 'say', 'even', 'know', 'together', 'every', 'official', 'attend', 'city', 'donald', 'democracy', 'safe', 'get', 'downtown', 'nasty', 'thank', 'big', 'contra', 'rally', 'inaugural', 'marcher', 'stay', 'mujeres', 'want', 'boston', 'power', 'national', 'https', 'pack', 'yesterday', 'wish', 'hate', 'best', 'mall', 'see', 'beautiful', 'lady', 'much', 'marching', 'womansmarch', 'station', 'participate', 'train', 'zendaya', 'plan', 'start', 'would', 'gather', 'louis', 'paris', 'sorry', 'movement', 'mulheres', 'strong', 'vote', 'need', 'friend', 'facebook', 'back', 'happen', 'antoniofrench', 'square', 'respect', 'chant', 'year', 'still', 'think', 'high', 'rmayemsinger', 'powerful', 'global', 'antarctica', 'hope', 'life', 'future', 'protester', 'photo', 'realdonaldtrump', 'womensmarchdenver', 'saudi', 'place', 'organizer', 'breaking', 'begin', 'rossalynwarren', 'give', 'part', 'wait', 'hillary', 'para', 'turn', 'never', 'update', 'already', 'expect', 'piersmorgan', 'wome', 'helicopter', 'aerial', 'turnout', 'female', 'voice', 'news', 'view', 'million', 'embassy', 'incredible', 'berlin', 'work', 'keep', 'white', 'share', 'report', 'womensmarchlon', 'anti-trump', 'pink']
+X_Y:  (137, 2) <class 'list'>
+This class size: 137
+for cluster  2
+['stand', 'believe', 'speak', 'ever', 'important', 'hillaryclinton', 'thanks', 'truly', 'always', 'value']
+X_Y:  (10, 2) <class 'list'>
+This class size: 10
+for cluster  3
+['head', 'come', 'feel', 'nick_offerman', 'feminist', 'hand', 'sundance', 'welcome', 'tiny', 'ball']
+X_Y:  (10, 2) <class 'list'>
+This class size: 10
+for cluster  4
+['trump', 'right', 'people', 'washington']
+X_Y:  (4, 2) <class 'list'>
+This class size: 4
+for cluster  5
+['protest', 'love', 'womensmarchonwashington', 'crowd', 'world', 'sign', 'make', 'live', 'proud', 'womensmarchlondon', 'inauguration', 'like', 'america', 'look', 'take', 'whyimarch', 'around', 'london', 'solidarity', 'watch', 'thousand', 'human', 'chicago', 'd.c.', 'sister']
+X_Y:  (25, 2) <class 'list'>
+This class size: 25
